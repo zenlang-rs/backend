@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-zen = {git = "https://github.com/zenlang-rs/zen-lang.git"}
 axum = "0.6.18"
 shuttle-axum = "0.29.0"
 shuttle-runtime = "0.29.0"
@@ -12,3 +11,4 @@ tokio = "1.28.2"
 serde = "1.0.189"
 tower-http = { version = "0.4.4", features = ["cors"] }
 http = "0.2.9"
+zen = {git = "https://github.com/zenlang-rs/zen-lang.git", branch = "main",version = "^0.1.1"}

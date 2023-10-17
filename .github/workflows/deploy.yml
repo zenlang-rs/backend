@@ -6,10 +6,58 @@ on:
       - main
   workflow_dispatch:
 
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: shuttle-hq/deploy-action@main
-        with:
-          deploy-key: ${{ secrets.SHUTTLE_API_KEY }}
+      # check out repo if not done already
+    - id: check-repo-is-not-initialized
+      run: echo "remote-url=$( git config --get remote.origin.url )" >> $GITHUB_OUTPUT
+      shell: bash
+    - uses: actions/checkout@v3
+      if: ${{ !contains(steps.check-repo-is-not-initialized.outputs.remote-url, github.repository) }}
+
+      # install with cargo-binstall
+    - name: Install cargo-binstall
+      run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+      shell: bash
+    - name: Install cargo-shuttle
+      run: cargo binstall -y --locked cargo-shuttle
+      shell: bash
+
+    - name: Clean Cloud Cache
+      run: cargo shuttle clean
+      env:
+        SHUTTLE_API_KEY: ${{ secrets.SHUTTLE_API_KEY }}
+      working-directory: "."
+      shell: bash
+    
+    - name: Deploy to Shuttle
+      run: |
+        cargo shuttle deploy \
+        | awk '!/Database URI.*?$/'
+      working-directory: "."
+      env:
+        SHUTTLE_API_KEY: ${{ secrets.SHUTTLE_API_KEY }}
+      shell: bash
+
+      # - uses: shuttle-hq/deploy-action@main
+      #   with:
+      #     deploy-key: ${{ secrets.SHUTTLE_API_KEY }}
+
+# name: Shuttle Deploy
+
+# on:
+#   push:
+#     branches:
+#       - main
+#   workflow_dispatch:
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: shuttle-hq/deploy-action@main
+#         with:
+#           deploy-key: ${{ secrets.SHUTTLE_API_KEY }}
