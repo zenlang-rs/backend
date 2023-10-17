@@ -1,21 +1,43 @@
-use axum::{routing::{get, post}, Router, Json, extract};
+use axum::{
+    extract,
+    routing::{get, post},
+    Json, Router,
+};
+
+// use http::{Method, header::ACCESS_CONTROL_ALLOW_ORIGIN};
 use serde::{Deserialize, Serialize};
+use tower_http::cors::CorsLayer;
 use zen::compile;
 
 async fn hello_zen() -> &'static str {
-    "Hello, world!"
+    "Zen is High Dear!"
 }
 
-async fn compile_code(extract::Json(user): extract::Json<CodeCompileRequest>) -> Json<CodeOutputResponse> {
-    Json(CodeOutputResponse { output: compile(user.code) })
+async fn compile_code(
+    extract::Json(user): extract::Json<CodeCompileRequest>,
+) -> Json<CodeOutputResponse> {
+    Json(CodeOutputResponse {
+        output: compile(user.code),
+    })
 }
 
 #[shuttle_runtime::main]
 async fn axum() -> shuttle_axum::ShuttleAxum {
+    // let origins: [axum::http::HeaderValue; 3] = [
+    //     "http://localhost:8000".parse().unwrap(),
+    //     "http://zenlang.netlify.app".parse().unwrap(),
+    //     "https://zenlang.netlify.app".parse().unwrap(),
+    // ];
+
+    let cors = CorsLayer::permissive();
+
+    let api_router = Router::new()
+                                    .route("/health", get(hello_zen))
+                                    .route("/compile", post(compile_code));
 
     let router = Router::new()
-                            .route("/api/health", get(hello_zen))
-                            .route("/api/compile", post(compile_code));
+            .nest("/api", api_router)
+            .layer(cors);
 
     Ok(router.into())
 }

@@ -2503,9 +2503,11 @@ name = "zenlang"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "http",
  "serde",
  "shuttle-axum",
  "shuttle-runtime",
  "tokio",
+ "tower-http",
  "zen",
 ]
