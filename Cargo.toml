@@ -6,9 +6,9 @@ edition = "2021"
 [dependencies]
 axum = "0.6.18"
 shuttle-axum = "0.29.0"
-shuttle-runtime = { "0.29.0", default-features = false }
+shuttle-runtime = { version = "0.29.0", default-features = false }
 tokio = "1.28.2"
 serde = "1.0.189"
 tower-http = { version = "0.4.4", features = ["cors"] }
 http = "0.2.9"
-zen = {git = "https://github.com/zenlang-rs/zen-lang.git", branch = "main",version = "^0.1.1"}
+zen = {git = "https://github.com/zenlang-rs/zen-lang.git", branch = "main",version = "^0.1.0"}

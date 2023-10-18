@@ -7,10 +7,10 @@ use axum::{
 // use http::{Method, header::ACCESS_CONTROL_ALLOW_ORIGIN};
 use serde::{Deserialize, Serialize};
 use tower_http::cors::CorsLayer;
-use zen::compile;
+use zen::{compile, get_version};
 
 async fn hello_zen() -> &'static str {
-    "Zen is High Dear!"
+    format!("Zen is High Dear!\nCompiler Version: {version}", version=get_version().unwrap_or("v0.0".to_owned())).leak()
 }
 
 async fn compile_code(
