@@ -2424,7 +2424,7 @@ dependencies = [
 [[package]]
 name = "zen"
 version = "0.1.0"
-source = "git+https://github.com/zenlang-rs/zen-lang.git?branch=main#3f084995789e6b471d37ebf23053fe95134605c9"
+source = "git+https://github.com/zenlang-rs/zen-lang.git?branch=main#6bb9840f8022b298a1102636cc9a96b664ed31fb"
 
 [[package]]
 name = "zenlang"
