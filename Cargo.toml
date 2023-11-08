@@ -5,8 +5,8 @@ edition = "2021"
 
 [dependencies]
 axum = "0.6.18"
-shuttle-axum = "0.29.0"
-shuttle-runtime = { version = "0.29.0", default-features = false }
+shuttle-axum = "0.31.0"
+shuttle-runtime = { version = "0.31.0", default-features = false }
 tokio = "1.28.2"
 serde = "1.0.189"
 tower-http = { version = "0.4.4", features = ["cors"] }
