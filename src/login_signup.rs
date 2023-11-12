@@ -28,6 +28,7 @@ pub struct UserData {
 
 #[derive(Deserialize, Serialize)]
 pub struct User {
+    name: String,
     username: String,
     password: String,
     email: String,
@@ -72,6 +73,21 @@ async fn signup(
     extract::Extension(state): extract::Extension<Arc<MyState>>,
     Json(req): Json<User>,
 ) -> Result<impl IntoResponse, impl IntoResponse> {
+    if req.email.trim().is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "Email cannot be empty".to_string()));
+    } else if req.password.trim().is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Password cannot be empty".to_string(),
+        ));
+    } else if req.name.trim().is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "Name cannot be empty".to_string()));
+    } else if req.username.trim().is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "UserName cannot be empty".to_string(),
+        ));
+    }
     let data_result = state.persist.load::<UserData>("data");
     let mut data = match data_result {
         Ok(data) => data,
@@ -86,6 +102,7 @@ async fn signup(
     }
     let hashed_password = hash(&req.password, DEFAULT_COST).unwrap();
     data.people.push(User {
+        name: req.name,
         username: req.username.clone(),
         password: hashed_password,
         email: req.email,
@@ -117,7 +134,7 @@ async fn login(
     match user {
         Some(user) => {
             // Check if the provided password matches the stored password
-            if bcrypt::verify(&req.password, &user.password).is_ok() {
+            if bcrypt::verify(&req.password, &user.password).is_ok_and(|x| x) {
                 let token = create_jwt(user.username.clone()).await;
                 Ok((StatusCode::OK, token))
             } else {

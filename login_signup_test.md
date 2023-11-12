@@ -4,6 +4,14 @@ After running Command ->
 cargo shuttle run --port 8000
 ```
 
+Run the command in other terminal to run httpc-tests
+
+```
+cargo watch -q -c -w examples/ -x 'run --example quick_dev'
+```
+
+### MANUAL CURL TESTS COMMANDS
+
 ```bash
 curl -X GET http://localhost:8000/api/health
 ```
@@ -18,7 +26,7 @@ curl -X POST -H "Content-Type: application/json" -d '{"code":"HI"}' http://local
 {"output":{"Ok":"HI\nBhag yha se!!\nOk?"}}
 
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{"username":"zen","password":"lang","email":"cpass@gmail.com"}' http://localhost:8000/api/signup
+curl -X POST -H "Content-Type: application/json" -d '{"name":"ME","username":"zen","password":"lang","email":"cpass@gmail.com"}' http://localhost:8000/api/signup
 ```
 
 token
