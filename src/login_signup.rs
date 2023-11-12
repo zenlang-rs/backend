@@ -33,7 +33,7 @@ pub struct User {
     email: String,
 }
 
-// add a new() function so the struct can be initialised if it doesn't exist
+// add a new() function so the struct can be initialized if it doesn't exist
 impl UserData {
     pub fn new() -> Self {
         Self {
