@@ -3,9 +3,12 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+mod config;
+mod email;
+
 mod login_signup;
 // use http::{Method, header::ACCESS_CONTROL_ALLOW_ORIGIN};
-use login_signup::{signup_routes, UserData};
+use login_signup::{email_routes, signup_routes, UserData};
 use serde::{Deserialize, Serialize};
 use shuttle_persist::PersistInstance;
 use tower_http::cors::CorsLayer;
@@ -43,6 +46,7 @@ async fn axum(#[shuttle_persist::Persist] persist: PersistInstance) -> shuttle_a
     let api_router = Router::new()
         .route("/health", get(hello_zen))
         .route("/compile", post(compile_code))
+        .merge(email_routes())
         .merge(signup_routes(persist));
 
     let router = Router::new().nest("/api", api_router).layer(cors);

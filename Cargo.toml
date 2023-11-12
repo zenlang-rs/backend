@@ -7,6 +7,9 @@ edition = "2021"
 axum = { version = "0.6.20", features = ["headers"] }
 shuttle-axum = "0.32.0"
 shuttle-runtime = { version = "0.32.0", default-features = false }
+dotenv = "0.15.0"
+handlebars = "4.3.7"
+lettre = { version = "0.10.4", features = ["tokio1", "tokio1-native-tls"] }
 serde = "1.0.189"
 tower-http = { version = "0.4.4", features = ["full"] }
 http = "0.2.9"

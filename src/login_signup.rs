@@ -4,9 +4,12 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use crate::login_signup::headers::authorization::Bearer;
+use dotenv::dotenv;
+use email::Email;
+
+use crate::{config, email, login_signup::headers::authorization::Bearer};
 use axum::{
-    extract::{self, TypedHeader},
+    extract::{self, Path, TypedHeader},
     headers,
     response::IntoResponse,
     routing::{get, post},
@@ -50,7 +53,7 @@ pub struct LoginRequest {
     password: String,
 }
 
-struct MyState {
+pub struct MyState {
     persist: Arc<PersistInstance>,
 }
 
@@ -192,4 +195,44 @@ pub fn signup_routes(persist: PersistInstance) -> Router {
         .route("/login", post(login))
         .route("/private", get(private_route))
         .layer(AddExtensionLayer::new(state))
+}
+
+#[derive(Debug, Serialize)]
+pub struct UserEmail {
+    pub name: String,
+    pub email: String,
+}
+
+#[derive(Deserialize)]
+struct EmailParam {
+    email: String,
+}
+
+async fn send_email(Path(EmailParam { email }): Path<EmailParam>) -> impl IntoResponse {
+    dotenv().ok();
+    let config = config::Config::init(email.clone());
+
+    // Create a User instance
+    let user = UserEmail {
+        name: "User".to_string(),
+        email: email.clone(),
+    };
+
+    let verification_code = "my_ultra_secure_verification_code";
+    let verification_url = format!("http://localhost:3000/verifyemail/{}", verification_code);
+
+    //  Create an Email instance
+    let email = Email::new(user, verification_url, config);
+    // Send a password reset token email
+    if let Err(err) = email.send_reset_password_code().await {
+        eprintln!("Failed to send password reset token email: {:?}", err);
+    } else {
+        println!("✅Password reset token email sent successfully!");
+    }
+
+    "Emails sent successfully"
+}
+
+pub fn email_routes() -> Router {
+    Router::new().route("/send_email/:email", get(send_email))
 }
