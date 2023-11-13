@@ -4,17 +4,17 @@ use lettre::{
     AsyncTransport, Message, Tokio1Executor,
 };
 
-use crate::{config::Config, login_signup::UserEmail};
+use crate::{config::Config, login_signup::User};
 
 pub struct Email {
-    user: UserEmail,
+    user: User,
     url: String,
     from: String,
     config: Config,
 }
 
 impl Email {
-    pub fn new(user: UserEmail, url: String, config: Config) -> Self {
+    pub fn new(user: User, url: String, config: Config) -> Self {
         let from = format!("Zen <{}>", config.smtp_from.to_owned());
 
         Email {

@@ -7,8 +7,9 @@ mod config;
 mod email;
 
 mod login_signup;
+use dotenv::dotenv;
 // use http::{Method, header::ACCESS_CONTROL_ALLOW_ORIGIN};
-use login_signup::{email_routes, signup_routes, UserData};
+use login_signup::{auth_routes, UserData};
 use serde::{Deserialize, Serialize};
 use shuttle_persist::PersistInstance;
 use tower_http::cors::CorsLayer;
@@ -37,7 +38,7 @@ async fn axum(#[shuttle_persist::Persist] persist: PersistInstance) -> shuttle_a
     //     "http://zenlang.netlify.app".parse().unwrap(),
     //     "https://zenlang.netlify.app".parse().unwrap(),
     // ];
-
+    dotenv().ok();
     if persist.load::<UserData>("data").is_err() {
         persist.save::<UserData>("data", UserData::new()).unwrap();
     }
@@ -46,8 +47,7 @@ async fn axum(#[shuttle_persist::Persist] persist: PersistInstance) -> shuttle_a
     let api_router = Router::new()
         .route("/health", get(hello_zen))
         .route("/compile", post(compile_code))
-        .merge(email_routes())
-        .merge(signup_routes(persist));
+        .merge(auth_routes(persist));
 
     let router = Router::new().nest("/api", api_router).layer(cors);
 

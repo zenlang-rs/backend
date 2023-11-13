@@ -1,4 +1,5 @@
 use std::{
+    env,
     fmt::Display,
     sync::Arc,
     time::{Duration, SystemTime},
@@ -6,13 +7,14 @@ use std::{
 
 use dotenv::dotenv;
 use email::Email;
+use rand::{distributions::Alphanumeric, Rng};
 
 use crate::{config, email, login_signup::headers::authorization::Bearer};
 use axum::{
     extract::{self, Path, TypedHeader},
     headers,
     response::IntoResponse,
-    routing::{get, post},
+    routing::post,
     Json, Router,
 };
 use bcrypt::{hash, DEFAULT_COST};
@@ -22,19 +24,19 @@ use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use shuttle_persist::PersistInstance;
 use tower_http::add_extension::AddExtensionLayer;
-// as you can see this allows for a nested structs
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct UserData {
     people: Vec<User>,
     total_records: i32,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct User {
-    name: String,
+    pub name: String,
     username: String,
     password: String,
-    email: String,
+    pub email: String,
+    verification_code: Option<String>,
 }
 
 // add a new() function so the struct can be initialized if it doesn't exist
@@ -70,7 +72,10 @@ impl Display for Claims {
 }
 
 static SECRET_KEY: once_cell::sync::Lazy<jsonwebtoken::EncodingKey> =
-    once_cell::sync::Lazy::new(|| jsonwebtoken::EncodingKey::from_secret("zen-lang-org".as_ref()));
+    once_cell::sync::Lazy::new(|| {
+        let secret = env::var("SECRET_KEY").unwrap_or_else(|_| panic!("SECRET_KEY must be set"));
+        jsonwebtoken::EncodingKey::from_secret(secret.as_ref())
+    });
 
 async fn signup(
     extract::Extension(state): extract::Extension<Arc<MyState>>,
@@ -109,6 +114,7 @@ async fn signup(
         username: req.username.clone(),
         password: hashed_password,
         email: req.email,
+        verification_code: None,
     });
     data.total_records += 1;
 
@@ -147,21 +153,6 @@ async fn login(
         None => Err((StatusCode::NOT_FOUND, "User not found.".to_string())),
     }
 }
-async fn private_route(
-    TypedHeader(auth_header): TypedHeader<Authorization<Bearer>>,
-) -> impl IntoResponse {
-    let token = auth_header.token();
-    match validate_jwt(token) {
-        Ok(_claims) => {
-            // If the token is valid, return a success message
-            (StatusCode::OK, "You have accessed a private route!")
-        }
-        Err(_e) => {
-            // If the token is not valid, return an error message
-            (StatusCode::UNAUTHORIZED, "Invalid token.")
-        }
-    }
-}
 
 async fn create_jwt(username: String) -> String {
     let claims = Claims {
@@ -176,16 +167,18 @@ async fn create_jwt(username: String) -> String {
     // Encode the claims into a JWT
     jsonwebtoken::encode(&jsonwebtoken::Header::default(), &claims, &SECRET_KEY).unwrap()
 }
+
 fn validate_jwt(token: &str) -> jsonwebtoken::errors::Result<Claims> {
+    let secret = env::var("SECRET_KEY").unwrap_or_else(|_| panic!("SECRET_KEY must be set"));
     decode::<Claims>(
         token,
-        &DecodingKey::from_secret("zen-lang-org".as_bytes()),
+        &DecodingKey::from_secret(secret.as_bytes()),
         &Validation::default(),
     )
     .map(|data| data.claims)
 }
 
-pub fn signup_routes(persist: PersistInstance) -> Router {
+pub fn auth_routes(persist: PersistInstance) -> Router {
     let state = Arc::new(MyState {
         persist: Arc::new(persist),
     });
@@ -193,14 +186,10 @@ pub fn signup_routes(persist: PersistInstance) -> Router {
     Router::new()
         .route("/signup", post(signup))
         .route("/login", post(login))
-        .route("/private", get(private_route))
+        .route("/send_email/:email", post(send_email))
+        .route("/reset", post(reset_password))
+        .route("/changepassword", post(change_password))
         .layer(AddExtensionLayer::new(state))
-}
-
-#[derive(Debug, Serialize)]
-pub struct UserEmail {
-    pub name: String,
-    pub email: String,
 }
 
 #[derive(Deserialize)]
@@ -208,31 +197,151 @@ struct EmailParam {
     email: String,
 }
 
-async fn send_email(Path(EmailParam { email }): Path<EmailParam>) -> impl IntoResponse {
+async fn send_email(
+    extract::Extension(state): extract::Extension<Arc<MyState>>,
+    Path(EmailParam { email }): Path<EmailParam>,
+) -> impl IntoResponse {
     dotenv().ok();
     let config = config::Config::init(email.clone());
 
-    // Create a User instance
-    let user = UserEmail {
-        name: "User".to_string(),
-        email: email.clone(),
+    // Generate a random verification code
+    let verification_code: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(100)
+        .map(char::from)
+        .collect();
+
+    let verification_url = format!(
+        "{}/{}/{}",
+        config.reset_password_url, email, verification_code
+    );
+
+    let data_result = state.persist.load::<UserData>("data");
+    let mut data = match data_result {
+        Ok(data) => data,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
     };
 
-    let verification_code = "my_ultra_secure_verification_code";
-    let verification_url = format!("http://localhost:3000/verifyemail/{}", verification_code);
+    // Initialize a mutable variable for the user
+    let mut user_option: Option<&mut User> = None;
+
+    // Find the user and update the verification code
+    for user in data.people.iter_mut() {
+        if user.email == email {
+            user.verification_code = Some(verification_code.clone());
+            user_option = Some(user);
+            break;
+        }
+    }
+
+    // Check if a user was found
+    let user = match user_option {
+        Some(user) => user,
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                "A user with this email does not exist".to_string(),
+            )
+        }
+    };
 
     //  Create an Email instance
-    let email = Email::new(user, verification_url, config);
+    let email = Email::new(user.clone(), verification_url, config);
     // Send a password reset token email
     if let Err(err) = email.send_reset_password_code().await {
         eprintln!("Failed to send password reset token email: {:?}", err);
     } else {
-        println!("✅Password reset token email sent successfully!");
+        // println!("✅Password reset token email sent successfully!");
+        match state.persist.save::<UserData>("data", data) {
+            Ok(_) => (StatusCode::OK, "Data saved successfully".to_string()),
+            Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+        };
     }
-
-    "Emails sent successfully"
+    (StatusCode::OK, "Emails sent successfully".to_string())
 }
 
-pub fn email_routes() -> Router {
-    Router::new().route("/send_email/:email", get(send_email))
+#[derive(Deserialize)]
+struct ResetPasswordParam {
+    email: String,
+    verification_token: String,
+    new_password: String,
+}
+
+async fn reset_password(
+    extract::Extension(state): extract::Extension<Arc<MyState>>,
+    Json(ResetPasswordParam {
+        email,
+        verification_token,
+        new_password,
+    }): Json<ResetPasswordParam>,
+) -> impl IntoResponse {
+    // Load the user data from the state
+    let data_result = state.persist.load::<UserData>("data");
+    let mut data = match data_result {
+        Ok(data) => data,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+    };
+    let hashed_password = hash(new_password, DEFAULT_COST).unwrap();
+    // Find the user with the same email and verification token
+    if let Some(user) = data.people.iter_mut().find(|person| {
+        person.email == email && person.verification_code.as_deref() == Some(&verification_token)
+    }) {
+        // Update the user's password
+        user.password = hashed_password;
+
+        match state.persist.save::<UserData>("data", data) {
+            Ok(_) => (StatusCode::OK, "Data saved successfully".to_string()),
+            Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+        };
+    } else {
+        return (
+            StatusCode::BAD_REQUEST,
+            "A user with this email and verification token does not exist".to_string(),
+        );
+    }
+
+    (StatusCode::OK, "Password reset successfully".to_string())
+}
+
+#[derive(Deserialize)]
+struct ChangePasswordRequest {
+    new_password: String,
+}
+
+async fn change_password(
+    TypedHeader(auth_header): TypedHeader<Authorization<Bearer>>,
+    extract::Extension(state): extract::Extension<Arc<MyState>>,
+    Json(req): Json<ChangePasswordRequest>,
+) -> Result<impl IntoResponse, impl IntoResponse> {
+    // Verify the JWT and extract the username
+    let token = auth_header.token();
+    match validate_jwt(token) {
+        Ok(claims) => {
+            let username = claims.sub;
+
+            // Load the user data
+            let data_result = state.persist.load::<UserData>("data");
+            let mut data = match data_result {
+                Ok(data) => data,
+                Err(e) => return Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+            };
+            // Find the user and update their password
+            if let Some(user) = data
+                .people
+                .iter_mut()
+                .find(|person| person.username == username)
+            {
+                let hashed_password = hash(req.new_password, DEFAULT_COST).unwrap();
+                user.password = hashed_password;
+
+                match state.persist.save::<UserData>("data", data) {
+                    Ok(_) => Ok((StatusCode::OK, "Password changed successfully".to_string())),
+                    Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+                }
+            } else {
+                Err((StatusCode::NOT_FOUND, "User not found.".to_string()))
+            }
+        }
+        Err(_e) => Err((StatusCode::UNAUTHORIZED, "Invalid token.".to_string())),
+    }
 }

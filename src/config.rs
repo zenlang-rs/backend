@@ -6,6 +6,7 @@ pub struct Config {
     pub smtp_pass: String,
     pub smtp_from: String,
     pub smtp_to: String,
+    pub reset_password_url: String,
 }
 
 impl Config {
@@ -15,6 +16,8 @@ impl Config {
         let smtp_user = std::env::var("SMTP_USER").expect("SMTP_USER must be set");
         let smtp_pass = std::env::var("SMTP_PASS").expect("SMTP_PASS must be set");
         let smtp_from = std::env::var("SMTP_FROM").expect("SMTP_FROM must be set");
+        let reset_password_url =
+            std::env::var("RESET_PASSWORD_URL").expect("RESET_PASSWORD_URL must be set");
         // let smtp_to = std::env::var("SMTP_TO").expect("SMTP_TO must be set");
 
         Config {
@@ -24,6 +27,7 @@ impl Config {
             smtp_port: smtp_port.parse::<u16>().unwrap(),
             smtp_from,
             smtp_to,
+            reset_password_url,
         }
     }
 }
