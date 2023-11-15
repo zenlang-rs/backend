@@ -36,7 +36,7 @@ pub struct User {
     username: String,
     password: String,
     pub email: String,
-    verification_code: Option<String>,
+    verification_token: Option<String>,
 }
 
 // add a new() function so the struct can be initialized if it doesn't exist
@@ -114,7 +114,7 @@ async fn signup(
         username: req.username.clone(),
         password: hashed_password,
         email: req.email,
-        verification_code: None,
+        verification_token: None,
     });
     data.total_records += 1;
 
@@ -127,7 +127,7 @@ async fn signup(
     }
 }
 
-async fn login(
+pub async fn login(
     extract::Extension(state): extract::Extension<Arc<MyState>>,
     Json(req): Json<LoginRequest>,
 ) -> Result<impl IntoResponse, impl IntoResponse> {
@@ -205,7 +205,7 @@ async fn send_email(
     let config = config::Config::init(email.clone());
 
     // Generate a random verification code
-    let verification_code: String = rand::thread_rng()
+    let verification_token: String = rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(100)
         .map(char::from)
@@ -213,7 +213,7 @@ async fn send_email(
 
     let verification_url = format!(
         "{}/{}/{}",
-        config.reset_password_url, email, verification_code
+        config.reset_password_url, email, verification_token
     );
 
     let data_result = state.persist.load::<UserData>("data");
@@ -228,7 +228,7 @@ async fn send_email(
     // Find the user and update the verification code
     for user in data.people.iter_mut() {
         if user.email == email {
-            user.verification_code = Some(verification_code.clone());
+            user.verification_token = Some(verification_token.clone());
             user_option = Some(user);
             break;
         }
@@ -284,7 +284,7 @@ async fn reset_password(
     let hashed_password = hash(new_password, DEFAULT_COST).unwrap();
     // Find the user with the same email and verification token
     if let Some(user) = data.people.iter_mut().find(|person| {
-        person.email == email && person.verification_code.as_deref() == Some(&verification_token)
+        person.email == email && person.verification_token.as_deref() == Some(&verification_token)
     }) {
         // Update the user's password
         user.password = hashed_password;

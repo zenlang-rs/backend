@@ -5,8 +5,7 @@ use axum::{
 };
 mod config;
 mod email;
-
-mod login_signup;
+pub mod login_signup;
 use dotenv::dotenv;
 // use http::{Method, header::ACCESS_CONTROL_ALLOW_ORIGIN};
 use login_signup::{auth_routes, UserData};
