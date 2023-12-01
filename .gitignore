@@ -20,3 +20,5 @@ Secrets*.toml
 .env.example
 .env.local
 .env.staging
+
+.DS_Store
