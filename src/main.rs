@@ -34,7 +34,8 @@ async fn axum(#[shuttle_persist::Persist] persist: PersistInstance) -> shuttle_a
         .route("/health", get(api_health))
         .route("/compile", post(controllers::compile_code::compile_code))
         .route("/quiz", post(controllers::compile_code::take_quiz))
-        .merge(auth_routes(persist));
+        .merge(auth_routes(persist))
+        .layer(cors.clone());
 
     let router = Router::new().nest("/api", api_router).layer(cors);
 
