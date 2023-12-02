@@ -8,12 +8,13 @@ use controllers::login_signup::{auth_routes, UserData};
 use shuttle_persist::PersistInstance;
 use tower_http::cors::CorsLayer;
 
-mod smtp_config;
 mod controllers;
+mod smtp_config;
 
 async fn api_health() -> &'static str {
-    "Zen is High Dear!\nCompiler Version: v0.2.0".to_string()
-    .leak()
+    "Zen is High Dear!\nCompiler Version: v0.2.0"
+        .to_string()
+        .leak()
 }
 
 #[shuttle_runtime::main]
@@ -39,4 +40,3 @@ async fn axum(#[shuttle_persist::Persist] persist: PersistInstance) -> shuttle_a
 
     Ok(router.into())
 }
-

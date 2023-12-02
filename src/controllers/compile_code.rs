@@ -14,18 +14,18 @@ pub struct CodeOutputResponse {
 #[derive(Deserialize)]
 pub struct CodeQuizRequest {
     pub code: String,
-    pub testcases: Vec<Testcase>
+    pub testcases: Vec<Testcase>,
 }
 
 #[derive(Deserialize)]
 pub struct Testcase {
     pub input: String,
-    pub expected_output: String
+    pub expected_output: String,
 }
 
 #[derive(Serialize)]
 pub struct QuizResponse {
-    pub output_match: Vec<Result<bool, String>>
+    pub output_match: Vec<Result<bool, String>>,
 }
 
 pub async fn compile_code(
@@ -36,14 +36,11 @@ pub async fn compile_code(
     })
 }
 
-pub async fn take_quiz(
-    extract::Json(user): extract::Json<CodeQuizRequest>,
-) -> Json<QuizResponse> {
+pub async fn take_quiz(extract::Json(user): extract::Json<CodeQuizRequest>) -> Json<QuizResponse> {
     Json(QuizResponse {
         output_match: match_outputs(user.code, user.testcases),
     })
 }
-
 
 fn runnable_code(code: String, input: &str) -> Result<String, String> {
     let runnable = run_program(code, input, false);
@@ -60,12 +57,8 @@ fn match_outputs(code: String, testcases: Vec<Testcase>) -> Vec<Result<bool, Str
         let code_instance = runnable_code(code.clone(), &testcase.input);
 
         match code_instance {
-            Ok(actual_output) => {
-                output_vec.push(Ok(actual_output == testcase.expected_output))
-            }
-            Err(err) => {
-                output_vec.push(Err(err))
-            }
+            Ok(actual_output) => output_vec.push(Ok(actual_output == testcase.expected_output)),
+            Err(err) => output_vec.push(Err(err)),
         }
     }
     output_vec

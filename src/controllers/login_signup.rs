@@ -5,11 +5,11 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use dotenv::dotenv;
 use super::email::Email;
+use dotenv::dotenv;
 use rand::{distributions::Alphanumeric, Rng};
 
-use crate::{smtp_config, controllers::login_signup::headers::authorization::Bearer};
+use crate::{controllers::login_signup::headers::authorization::Bearer, smtp_config};
 use axum::{
     extract::{self, Path, TypedHeader},
     headers,
