@@ -8,12 +8,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="722806da-867f-4768-b004-4eb5ed7e80cd" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/controllers.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/controllers/compile_code.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/config.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/smtp_config.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/email.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/email.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/login_signup.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/login_signup.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/compile_code.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/compile_code.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -81,7 +77,7 @@
       <option name="presentableId" value="Default" />
       <updated>1701480872829</updated>
       <workItem from="1701480873881" duration="499000" />
-      <workItem from="1701485188866" duration="1649000" />
+      <workItem from="1701485188866" duration="4256000" />
     </task>
     <servers />
   </component>
