@@ -3,23 +3,22 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-mod config;
-mod email;
-
-mod login_signup;
 use dotenv::dotenv;
 // use http::{Method, header::ACCESS_CONTROL_ALLOW_ORIGIN};
 use login_signup::{auth_routes, UserData};
 use serde::{Deserialize, Serialize};
 use shuttle_persist::PersistInstance;
 use tower_http::cors::CorsLayer;
-use zen::{compile, get_version};
+use zen::run_program;
+
+mod config;
+mod email;
+
+mod login_signup;
 
 async fn hello_zen() -> &'static str {
     format!(
-        "Zen is High Dear!\nCompiler Version: {version}",
-        version = get_version().unwrap_or("v0.0".to_owned())
-    )
+        "Zen is High Dear!\nCompiler Version: v0.2.0")
     .leak()
 }
 
@@ -27,8 +26,16 @@ async fn compile_code(
     extract::Json(user): extract::Json<CodeCompileRequest>,
 ) -> Json<CodeOutputResponse> {
     Json(CodeOutputResponse {
-        output: compile(user.code),
+        output: runnable_code(user.code, ""),
     })
+}
+
+fn runnable_code(code: String, input: &str) -> Result<String, String> {
+    let runnable = run_program(code, input);
+    match runnable {
+        Ok(output) => Ok(output),
+        Err(err) => Err(format!("[ERROR]\n{}\n{}", err.msg, err.error_type)),
+    }
 }
 
 #[shuttle_runtime::main]

@@ -330,6 +330,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "colored"
+version = "2.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2674ec482fbc38012cf31e6c42ba0177b431a0cb6f15fe40efa5aab1bda516f6"
+dependencies = [
+ "is-terminal",
+ "lazy_static",
+ "windows-sys 0.48.0",
+]
+
+[[package]]
 name = "comfy-table"
 version = "6.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1041,6 +1052,17 @@ checksum = "21859b667d66a4c1dacd9df0863b3efb65785474255face87f5bca39dd8407c0"
 dependencies = [
  "memchr",
  "serde",
+]
+
+[[package]]
+name = "is-terminal"
+version = "0.4.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb0889898416213fab133e1d33a0e5858a48177452750691bde3666d0fdbaf8b"
+dependencies = [
+ "hermit-abi",
+ "rustix",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -3121,8 +3143,12 @@ dependencies = [
 
 [[package]]
 name = "zen"
-version = "0.1.0"
-source = "git+https://github.com/zenlang-rs/zen-lang.git?branch=main#8e29a89c38f5311c2ce03c021ee4bdb4fda6bbff"
+version = "0.2.0"
+source = "git+https://github.com/zenlang-rs/zen-lang.git?branch=main#5dc419d8240d17336a616aff36faf90b68d0e326"
+dependencies = [
+ "colored",
+ "nom",
+]
 
 [[package]]
 name = "zenlang"
