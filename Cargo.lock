@@ -3148,8 +3148,8 @@ dependencies = [
 
 [[package]]
 name = "zen"
-version = "0.2.3"
-source = "git+https://github.com/zenlang-rs/zen-lang.git?branch=main#1d5869859e2b608f40858537af7f8f3c779b8412"
+version = "0.2.4"
+source = "git+https://github.com/zenlang-rs/zen-lang.git?branch=main#5eb7ba0a5d3cf39612a84844be0174790fb3ebdc"
 dependencies = [
  "colored",
  "nom",
