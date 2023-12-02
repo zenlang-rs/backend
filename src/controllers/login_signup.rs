@@ -6,10 +6,10 @@ use std::{
 };
 
 use dotenv::dotenv;
-use email::Email;
+use super::email::Email;
 use rand::{distributions::Alphanumeric, Rng};
 
-use crate::{config, email, login_signup::headers::authorization::Bearer};
+use crate::{smtp_config, controllers::login_signup::headers::authorization::Bearer};
 use axum::{
     extract::{self, Path, TypedHeader},
     headers,
@@ -202,7 +202,7 @@ async fn send_email(
     Path(EmailParam { email }): Path<EmailParam>,
 ) -> impl IntoResponse {
     dotenv().ok();
-    let config = config::Config::init(email.clone());
+    let config = smtp_config::Config::init(email.clone());
 
     // Generate a random verification code
     let verification_code: String = rand::thread_rng()

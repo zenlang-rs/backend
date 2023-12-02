@@ -4,7 +4,7 @@ use lettre::{
     AsyncTransport, Message, Tokio1Executor,
 };
 
-use crate::{config::Config, login_signup::User};
+use crate::{smtp_config::Config, controllers::login_signup::User};
 
 pub struct Email {
     user: User,
