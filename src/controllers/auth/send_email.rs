@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use axum::{extract, Json};
 use axum::extract::Path;
-use dotenv::dotenv;
 use http::StatusCode;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
@@ -24,7 +23,6 @@ pub async fn send_email(
     extract::Extension(state): extract::Extension<Arc<MyState>>,
     Path(EmailParam { email }): Path<EmailParam>,
 ) -> Json<SendEmailResponse> {
-    dotenv().ok();
     let config = smtp_config::Config::init(email.clone());
 
     // Generate a random verification code

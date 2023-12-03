@@ -22,3 +22,5 @@ Secrets*.toml
 .env.staging
 
 .DS_Store
+Secrets.toml
+!Secrets.sample.toml

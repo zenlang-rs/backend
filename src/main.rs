@@ -2,8 +2,6 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use dotenv::dotenv;
-// use http::{Method, header::ACCESS_CONTROL_ALLOW_ORIGIN};
 use controllers::authentication::{auth_routes, UserData};
 use shuttle_persist::PersistInstance;
 use tower_http::cors::CorsLayer;
@@ -24,7 +22,6 @@ async fn axum(#[shuttle_persist::Persist] persist: PersistInstance) -> shuttle_a
     //     "http://zenlang.netlify.app".parse().unwrap(),
     //     "https://zenlang.netlify.app".parse().unwrap(),
     // ];
-    dotenv().ok();
     if persist.load::<UserData>("data").is_err() {
         persist.save::<UserData>("data", UserData::new()).unwrap();
     }
