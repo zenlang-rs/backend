@@ -1,18 +1,17 @@
 use std::{
-    env,
     fmt::Display,
     sync::Arc,
     time::{Duration, SystemTime},
 };
 
-use axum::{
-    routing::post,
-    Router,
-};
+use axum::{routing::post, Router};
 
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use jsonwebtoken::{decode, DecodingKey, EncodingKey, Validation};
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use shuttle_persist::PersistInstance;
+use shuttle_secrets::SecretStore;
+use std::sync::Mutex;
 use tower_http::add_extension::AddExtensionLayer;
 
 use crate::controllers::auth::change_password::change_password;
@@ -36,6 +35,11 @@ pub struct User {
     pub(crate) verification_code: Option<String>,
 }
 
+lazy_static! {
+    static ref SECRETS: Mutex<EncodingKey> =
+        Mutex::new(EncodingKey::from_secret("DEFAULT".as_bytes()));
+}
+
 // add a new() function so the struct can be initialized if it doesn't exist
 impl UserData {
     pub fn new() -> Self {
@@ -48,6 +52,7 @@ impl UserData {
 
 pub struct MyState {
     pub(crate) persist: Arc<PersistInstance>,
+    pub(crate) secrets: Arc<SecretStore>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -62,15 +67,6 @@ impl Display for Claims {
     }
 }
 
-static SECRET_KEY: once_cell::sync::Lazy<jsonwebtoken::EncodingKey> =
-    once_cell::sync::Lazy::new(|| {
-        let secret = env::var("SECRET_KEY").unwrap_or_else(|_| panic!("SECRET_KEY must be set"));
-        jsonwebtoken::EncodingKey::from_secret(secret.as_ref())
-    });
-
-
-
-
 pub async fn create_jwt(username: String) -> String {
     let claims = Claims {
         sub: username,
@@ -82,11 +78,15 @@ pub async fn create_jwt(username: String) -> String {
     };
 
     // Encode the claims into a JWT
-    jsonwebtoken::encode(&jsonwebtoken::Header::default(), &claims, &SECRET_KEY).unwrap()
+    jsonwebtoken::encode(
+        &jsonwebtoken::Header::default(),
+        &claims,
+        &SECRETS.lock().unwrap(),
+    )
+    .unwrap()
 }
 
-pub(crate) fn validate_jwt(token: &str) -> jsonwebtoken::errors::Result<Claims> {
-    let secret = env::var("SECRET_KEY").unwrap_or_else(|_| panic!("SECRET_KEY must be set"));
+pub(crate) fn validate_jwt(token: &str, secret: String) -> jsonwebtoken::errors::Result<Claims> {
     decode::<Claims>(
         token,
         &DecodingKey::from_secret(secret.as_bytes()),
@@ -95,10 +95,22 @@ pub(crate) fn validate_jwt(token: &str) -> jsonwebtoken::errors::Result<Claims> 
     .map(|data| data.claims)
 }
 
-pub fn auth_routes(persist: PersistInstance) -> Router {
+pub fn auth_routes(persist: PersistInstance, shuttle_secrets: SecretStore) -> Router {
     let state = Arc::new(MyState {
         persist: Arc::new(persist),
+        secrets: Arc::new(shuttle_secrets),
     });
+
+    let secret_key = jsonwebtoken::EncodingKey::from_secret(
+        state
+            .secrets
+            .get("SECRET_KEY")
+            .unwrap_or_else(|| panic!("SECRET_KEY must be set"))
+            .as_bytes(),
+    );
+
+    let mut secret = SECRETS.lock().unwrap();
+    *secret = secret_key;
 
     Router::new()
         .route("/signup", post(signup))

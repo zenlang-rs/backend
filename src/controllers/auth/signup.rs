@@ -1,15 +1,15 @@
-use std::sync::Arc;
+use crate::controllers::authentication::{MyState, User, UserData};
 use axum::{extract, Json};
-use bcrypt::{DEFAULT_COST, hash};
+use bcrypt::{hash, DEFAULT_COST};
 use http::StatusCode;
 use serde::Serialize;
-use crate::controllers::authentication::{MyState, User, UserData};
+use std::sync::Arc;
 
 #[derive(Debug, Serialize)]
 pub struct SignupResponse {
     status_code: u16,
     message: String,
-    token: Option<String>
+    token: Option<String>,
 }
 pub async fn signup(
     extract::Extension(state): extract::Extension<Arc<MyState>>,
@@ -43,11 +43,13 @@ pub async fn signup(
     let data_result = state.persist.load::<UserData>("data");
     let mut data = match data_result {
         Ok(data) => data,
-        Err(e) => return Ok(Json(SignupResponse {
-            status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
-            message: e.to_string(),
-            token: None,
-        })),
+        Err(e) => {
+            return Ok(Json(SignupResponse {
+                status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
+                message: e.to_string(),
+                token: None,
+            }))
+        }
     };
     // Check if a user with the same email already exists
     if data.people.iter().any(|person| person.email == req.email) {

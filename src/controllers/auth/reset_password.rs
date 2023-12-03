@@ -1,9 +1,9 @@
-use std::sync::Arc;
+use crate::controllers::authentication::{MyState, UserData};
 use axum::{extract, Json};
-use bcrypt::{DEFAULT_COST, hash};
+use bcrypt::{hash, DEFAULT_COST};
 use http::StatusCode;
 use serde::{Deserialize, Serialize};
-use crate::controllers::authentication::{MyState, UserData};
+use std::sync::Arc;
 
 #[derive(Deserialize)]
 pub struct ResetPasswordParam {
@@ -21,19 +21,21 @@ pub struct ResetPasswordResponse {
 pub async fn reset_password(
     extract::Extension(state): extract::Extension<Arc<MyState>>,
     Json(ResetPasswordParam {
-             email,
-             verification_token,
-             new_password,
-         }): Json<ResetPasswordParam>,
+        email,
+        verification_token,
+        new_password,
+    }): Json<ResetPasswordParam>,
 ) -> Json<ResetPasswordResponse> {
     // Load the user data from the state
     let data_result = state.persist.load::<UserData>("data");
     let mut data = match data_result {
         Ok(data) => data,
-        Err(e) => return Json(ResetPasswordResponse {
-            status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
-            message: e.to_string(),
-        }),
+        Err(e) => {
+            return Json(ResetPasswordResponse {
+                status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
+                message: e.to_string(),
+            })
+        }
     };
     let hashed_password = hash(new_password, DEFAULT_COST).unwrap();
     // Find the user with the same email and verification token

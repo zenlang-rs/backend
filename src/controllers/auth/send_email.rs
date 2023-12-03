@@ -1,13 +1,13 @@
-use std::sync::Arc;
-use axum::{extract, Json};
+use crate::controllers::auth::email_util::Email;
+use crate::controllers::authentication::{MyState, User, UserData};
+use crate::smtp_config;
 use axum::extract::Path;
+use axum::{extract, Json};
 use http::StatusCode;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use crate::controllers::auth::email_util::Email;
-use crate::controllers::authentication::{MyState, User, UserData};
-use crate::smtp_config;
+use std::sync::Arc;
 
 #[derive(Deserialize)]
 pub struct EmailParam {
@@ -23,7 +23,7 @@ pub async fn send_email(
     extract::Extension(state): extract::Extension<Arc<MyState>>,
     Path(EmailParam { email }): Path<EmailParam>,
 ) -> Json<SendEmailResponse> {
-    let config = smtp_config::Config::init(email.clone());
+    let config = smtp_config::Config::init(email.clone(), state.secrets.clone());
 
     // Generate a random verification code
     let verification_code: String = rand::thread_rng()
@@ -40,10 +40,12 @@ pub async fn send_email(
     let data_result = state.persist.load::<UserData>("data");
     let mut data = match data_result {
         Ok(data) => data,
-        Err(e) => return Json(SendEmailResponse {
-            status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
-            message: e.to_string(),
-        }),
+        Err(e) => {
+            return Json(SendEmailResponse {
+                status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
+                message: e.to_string(),
+            })
+        }
     };
 
     // Initialize a mutable variable for the user

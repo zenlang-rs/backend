@@ -1,8 +1,8 @@
-use std::sync::Arc;
+use crate::controllers::authentication::{create_jwt, MyState, UserData};
 use axum::{extract, Json};
 use http::StatusCode;
 use serde::{Deserialize, Serialize};
-use crate::controllers::authentication::{create_jwt, MyState, UserData};
+use std::sync::Arc;
 
 #[derive(Deserialize)]
 pub struct LoginRequest {
@@ -23,11 +23,13 @@ pub async fn login(
     let data_result = state.persist.load::<UserData>("data");
     let data = match data_result {
         Ok(data) => data,
-        Err(e) => return Ok(Json(LoginResponse {
-            status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
-            message: e.to_string(),
-            token: None,
-        })),
+        Err(e) => {
+            return Ok(Json(LoginResponse {
+                status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
+                message: e.to_string(),
+                token: None,
+            }))
+        }
     };
 
     // Find the user with the provided email

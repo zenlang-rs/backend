@@ -5,7 +5,7 @@ use zen::run_program;
 #[derive(Deserialize)]
 pub struct CodeCompileRequest {
     pub code: String,
-    pub input: String
+    pub input: String,
 }
 #[derive(Serialize)]
 pub struct CodeOutputResponse {
@@ -58,7 +58,9 @@ fn match_outputs(code: String, testcases: Vec<Testcase>) -> Vec<Result<bool, Str
         let code_instance = runnable_code(code.clone(), &testcase.input);
 
         match code_instance {
-            Ok(actual_output) => output_vec.push(Ok(actual_output.trim_end() == testcase.expected_output)),
+            Ok(actual_output) => {
+                output_vec.push(Ok(actual_output.trim_end() == testcase.expected_output))
+            }
             Err(err) => output_vec.push(Err(err)),
         }
     }

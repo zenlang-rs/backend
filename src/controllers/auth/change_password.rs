@@ -1,11 +1,11 @@
-use std::sync::Arc;
-use axum::headers::Authorization;
+use crate::controllers::authentication::{MyState, UserData};
 use axum::headers::authorization::Bearer;
+use axum::headers::Authorization;
 use axum::{extract, Json, TypedHeader};
-use bcrypt::{DEFAULT_COST, hash};
+use bcrypt::{hash, DEFAULT_COST};
 use http::StatusCode;
 use serde::{Deserialize, Serialize};
-use crate::controllers::authentication::{MyState, UserData};
+use std::sync::Arc;
 
 #[derive(Debug, Serialize)]
 pub struct ChangePasswordResponse {
@@ -25,7 +25,13 @@ pub async fn change_password(
 ) -> Json<ChangePasswordResponse> {
     // Verify the JWT and extract the username
     let token = auth_header.token();
-    match crate::controllers::authentication::validate_jwt(token) {
+    match crate::controllers::authentication::validate_jwt(
+        token,
+        state
+            .secrets
+            .get("SECRET_KEY")
+            .unwrap_or_else(|| panic!("Expected SECRET_KEY in secrets!")),
+    ) {
         Ok(claims) => {
             let username = claims.sub;
 
@@ -33,10 +39,12 @@ pub async fn change_password(
             let data_result = state.persist.load::<UserData>("data");
             let mut data = match data_result {
                 Ok(data) => data,
-                Err(e) => return Json(ChangePasswordResponse {
-                    status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
-                    message: e.to_string(),
-                }),
+                Err(e) => {
+                    return Json(ChangePasswordResponse {
+                        status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
+                        message: e.to_string(),
+                    })
+                }
             };
             // Find the user and update their password
             if let Some(user) = data

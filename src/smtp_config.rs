@@ -1,3 +1,7 @@
+use std::sync::Arc;
+
+use shuttle_secrets::SecretStore;
+
 #[derive(Debug, Clone)]
 pub struct Config {
     pub smtp_host: String,
@@ -10,15 +14,16 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn init(smtp_to: String) -> Config {
-        let smtp_host = std::env::var("SMTP_HOST").expect("SMTP_HOST must be set");
-        let smtp_port = std::env::var("SMTP_PORT").expect("SMTP_PORT must be set");
-        let smtp_user = std::env::var("SMTP_USER").expect("SMTP_USER must be set");
-        let smtp_pass = std::env::var("SMTP_PASS").expect("SMTP_PASS must be set");
-        let smtp_from = std::env::var("SMTP_FROM").expect("SMTP_FROM must be set");
-        let reset_password_url =
-            std::env::var("RESET_PASSWORD_URL").expect("RESET_PASSWORD_URL must be set");
-        // let smtp_to = std::env::var("SMTP_TO").expect("SMTP_TO must be set");
+    pub fn init(smtp_to: String, secrets: Arc<SecretStore>) -> Config {
+        let smtp_host = secrets.get("SMTP_HOST").expect("SMTP_HOST must be set");
+        let smtp_port = secrets.get("SMTP_PORT").expect("SMTP_PORT must be set");
+        let smtp_user = secrets.get("SMTP_USER").expect("SMTP_USER must be set");
+        let smtp_pass = secrets.get("SMTP_PASS").expect("SMTP_PASS must be set");
+        let smtp_from = secrets.get("SMTP_FROM").expect("SMTP_FROM must be set");
+        let reset_password_url = secrets
+            .get("RESET_PASSWORD_URL")
+            .expect("RESET_PASSWORD_URL must be set");
+        // let smtp_to = secrets.get("SMTP_TO").expect("SMTP_TO must be set");
 
         Config {
             smtp_host,
