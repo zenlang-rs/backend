@@ -4,7 +4,7 @@ use axum::{
 };
 use dotenv::dotenv;
 // use http::{Method, header::ACCESS_CONTROL_ALLOW_ORIGIN};
-use controllers::login_signup::{auth_routes, UserData};
+use controllers::authentication::{auth_routes, UserData};
 use shuttle_persist::PersistInstance;
 use tower_http::cors::CorsLayer;
 
