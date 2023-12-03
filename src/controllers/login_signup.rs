@@ -13,7 +13,6 @@ use crate::{controllers::login_signup::headers::authorization::Bearer, smtp_conf
 use axum::{
     extract::{self, Path, TypedHeader},
     headers,
-    response::IntoResponse,
     routing::post,
     Json, Router,
 };
@@ -71,6 +70,31 @@ impl Display for Claims {
     }
 }
 
+#[derive(Debug, Serialize)]
+struct SignupResponse {
+    status_code: u16,
+    message: String,
+    token: Option<String>
+}
+
+#[derive(Debug, Serialize)]
+struct LoginResponse {
+    status_code: u16,
+    message: String,
+    token: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct EmailParam {
+    email: String,
+}
+
+#[derive(Debug, Serialize)]
+struct SendEmailResponse {
+    status_code: u16,
+    message: String,
+}
+
 static SECRET_KEY: once_cell::sync::Lazy<jsonwebtoken::EncodingKey> =
     once_cell::sync::Lazy::new(|| {
         let secret = env::var("SECRET_KEY").unwrap_or_else(|_| panic!("SECRET_KEY must be set"));
@@ -80,33 +104,48 @@ static SECRET_KEY: once_cell::sync::Lazy<jsonwebtoken::EncodingKey> =
 async fn signup(
     extract::Extension(state): extract::Extension<Arc<MyState>>,
     Json(req): Json<User>,
-) -> Result<impl IntoResponse, impl IntoResponse> {
+) -> Result<Json<SignupResponse>, Json<SignupResponse>> {
     if req.email.trim().is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "Email cannot be empty".to_string()));
+        return Ok(Json(SignupResponse {
+            status_code: StatusCode::BAD_REQUEST.into(),
+            message: "Email cannot be empty".to_string(),
+            token: None,
+        }));
     } else if req.password.trim().is_empty() {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "Password cannot be empty".to_string(),
-        ));
+        return Ok(Json(SignupResponse {
+            status_code: StatusCode::BAD_REQUEST.into(),
+            message: "Password cannot be empty".to_string(),
+            token: None,
+        }));
     } else if req.name.trim().is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "Name cannot be empty".to_string()));
+        return Ok(Json(SignupResponse {
+            status_code: StatusCode::BAD_REQUEST.into(),
+            message: "Name cannot be empty".to_string(),
+            token: None,
+        }));
     } else if req.username.trim().is_empty() {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "UserName cannot be empty".to_string(),
-        ));
+        return Ok(Json(SignupResponse {
+            status_code: StatusCode::BAD_REQUEST.into(),
+            message: "UserName cannot be empty".to_string(),
+            token: None,
+        }));
     }
     let data_result = state.persist.load::<UserData>("data");
     let mut data = match data_result {
         Ok(data) => data,
-        Err(e) => return Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+        Err(e) => return Ok(Json(SignupResponse {
+            status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
+            message: e.to_string(),
+            token: None,
+        })),
     };
     // Check if a user with the same email already exists
     if data.people.iter().any(|person| person.email == req.email) {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "A user with this email already exists".to_string(),
-        ));
+        return Ok(Json(SignupResponse {
+            status_code: StatusCode::BAD_REQUEST.into(),
+            message: "A user with this email already exists".to_string(),
+            token: None,
+        }));
     }
     let hashed_password = hash(&req.password, DEFAULT_COST).unwrap();
     data.people.push(User {
@@ -121,20 +160,34 @@ async fn signup(
     match state.persist.save::<UserData>("data", data) {
         Ok(_) => {
             let token = create_jwt(req.username.clone()).await;
-            Ok((StatusCode::CREATED, token))
+            // Return a JSON response with status code and message
+            let response = SignupResponse {
+                status_code: StatusCode::CREATED.into(),
+                message: "User created successfully".to_string(),
+                token: Some(token),
+            };
+            Ok(Json(response))
         }
-        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+        Err(e) => Ok(Json(SignupResponse {
+            status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
+            message: e.to_string(),
+            token: None,
+        })),
     }
 }
 
 async fn login(
     extract::Extension(state): extract::Extension<Arc<MyState>>,
     Json(req): Json<LoginRequest>,
-) -> Result<impl IntoResponse, impl IntoResponse> {
+) -> Result<Json<LoginResponse>, Json<LoginResponse>> {
     let data_result = state.persist.load::<UserData>("data");
     let data = match data_result {
         Ok(data) => data,
-        Err(e) => return Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+        Err(e) => return Ok(Json(LoginResponse {
+            status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
+            message: e.to_string(),
+            token: None,
+        })),
     };
 
     // Find the user with the provided email
@@ -145,14 +198,27 @@ async fn login(
             // Check if the provided password matches the stored password
             if bcrypt::verify(&req.password, &user.password).is_ok_and(|x| x) {
                 let token = create_jwt(user.username.clone()).await;
-                Ok((StatusCode::OK, token))
+                Ok(Json(LoginResponse {
+                    status_code: StatusCode::OK.into(),
+                    message: "Login successful".to_string(),
+                    token: Some(token),
+                }))
             } else {
-                Err((StatusCode::UNAUTHORIZED, "Invalid password.".to_string()))
+                Ok(Json(LoginResponse {
+                    status_code: StatusCode::UNAUTHORIZED.into(),
+                    message: "Invalid password.".to_string(),
+                    token: None,
+                }))
             }
         }
-        None => Err((StatusCode::NOT_FOUND, "User not found.".to_string())),
+        None => Ok(Json(LoginResponse {
+            status_code: StatusCode::NOT_FOUND.into(),
+            message: "User not found.".to_string(),
+            token: None,
+        })),
     }
 }
+
 
 async fn create_jwt(username: String) -> String {
     let claims = Claims {
@@ -192,15 +258,10 @@ pub fn auth_routes(persist: PersistInstance) -> Router {
         .layer(AddExtensionLayer::new(state))
 }
 
-#[derive(Deserialize)]
-struct EmailParam {
-    email: String,
-}
-
 async fn send_email(
     extract::Extension(state): extract::Extension<Arc<MyState>>,
     Path(EmailParam { email }): Path<EmailParam>,
-) -> impl IntoResponse {
+) -> Json<SendEmailResponse> {
     dotenv().ok();
     let config = smtp_config::Config::init(email.clone());
 
@@ -219,7 +280,10 @@ async fn send_email(
     let data_result = state.persist.load::<UserData>("data");
     let mut data = match data_result {
         Ok(data) => data,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+        Err(e) => return Json(SendEmailResponse {
+            status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
+            message: e.to_string(),
+        }),
     };
 
     // Initialize a mutable variable for the user
@@ -238,10 +302,10 @@ async fn send_email(
     let user = match user_option {
         Some(user) => user,
         None => {
-            return (
-                StatusCode::BAD_REQUEST,
-                "A user with this email does not exist".to_string(),
-            )
+            return Json(SendEmailResponse {
+                status_code: StatusCode::BAD_REQUEST.into(),
+                message: "A user with this email does not exist".to_string(),
+            })
         }
     };
 
@@ -250,14 +314,23 @@ async fn send_email(
     // Send a password reset token email
     if let Err(err) = email.send_reset_password_code().await {
         eprintln!("Failed to send password reset token email: {:?}", err);
+        Json(SendEmailResponse {
+            status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
+            message: format!("Failed to send email: {:?}", err),
+        })
     } else {
         // println!("✅Password reset token email sent successfully!");
         match state.persist.save::<UserData>("data", data) {
-            Ok(_) => (StatusCode::OK, "Data saved successfully".to_string()),
-            Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
-        };
+            Ok(_) => Json(SendEmailResponse {
+                status_code: StatusCode::OK.into(),
+                message: "Email sent successfully!".to_string(),
+            }),
+            Err(e) => Json(SendEmailResponse {
+                status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
+                message: e.to_string(),
+            }),
+        }
     }
-    (StatusCode::OK, "Emails sent successfully".to_string())
 }
 
 #[derive(Deserialize)]
@@ -267,19 +340,28 @@ struct ResetPasswordParam {
     new_password: String,
 }
 
+#[derive(Debug, Serialize)]
+struct ResetPasswordResponse {
+    status_code: u16,
+    message: String,
+}
+
 async fn reset_password(
     extract::Extension(state): extract::Extension<Arc<MyState>>,
     Json(ResetPasswordParam {
-        email,
-        verification_token,
-        new_password,
-    }): Json<ResetPasswordParam>,
-) -> impl IntoResponse {
+             email,
+             verification_token,
+             new_password,
+         }): Json<ResetPasswordParam>,
+) -> Json<ResetPasswordResponse> {
     // Load the user data from the state
     let data_result = state.persist.load::<UserData>("data");
     let mut data = match data_result {
         Ok(data) => data,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+        Err(e) => return Json(ResetPasswordResponse {
+            status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
+            message: e.to_string(),
+        }),
     };
     let hashed_password = hash(new_password, DEFAULT_COST).unwrap();
     // Find the user with the same email and verification token
@@ -290,29 +372,41 @@ async fn reset_password(
         user.password = hashed_password;
 
         match state.persist.save::<UserData>("data", data) {
-            Ok(_) => (StatusCode::OK, "Data saved successfully".to_string()),
-            Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
-        };
+            Ok(_) => Json(ResetPasswordResponse {
+                status_code: StatusCode::OK.into(),
+                message: "Password Reset Successfully!".to_string(),
+            }),
+            Err(e) => Json(ResetPasswordResponse {
+                status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
+                message: e.to_string(),
+            }),
+        }
     } else {
-        return (
-            StatusCode::BAD_REQUEST,
-            "A user with this email and verification token does not exist".to_string(),
-        );
+        Json(ResetPasswordResponse {
+            status_code: StatusCode::BAD_REQUEST.into(),
+            message: "A user with this email and verification token does not exist".to_string(),
+        })
     }
-
-    (StatusCode::OK, "Password reset successfully".to_string())
 }
+
 
 #[derive(Deserialize)]
 struct ChangePasswordRequest {
     new_password: String,
 }
 
+// Assuming you have a struct representing the change password response
+#[derive(Debug, Serialize)]
+struct ChangePasswordResponse {
+    status_code: u16,
+    message: String,
+}
+
 async fn change_password(
     TypedHeader(auth_header): TypedHeader<Authorization<Bearer>>,
     extract::Extension(state): extract::Extension<Arc<MyState>>,
     Json(req): Json<ChangePasswordRequest>,
-) -> Result<impl IntoResponse, impl IntoResponse> {
+) -> Json<ChangePasswordResponse> {
     // Verify the JWT and extract the username
     let token = auth_header.token();
     match validate_jwt(token) {
@@ -323,7 +417,10 @@ async fn change_password(
             let data_result = state.persist.load::<UserData>("data");
             let mut data = match data_result {
                 Ok(data) => data,
-                Err(e) => return Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+                Err(e) => return Json(ChangePasswordResponse {
+                    status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
+                    message: e.to_string(),
+                }),
             };
             // Find the user and update their password
             if let Some(user) = data
@@ -335,13 +432,25 @@ async fn change_password(
                 user.password = hashed_password;
 
                 match state.persist.save::<UserData>("data", data) {
-                    Ok(_) => Ok((StatusCode::OK, "Password changed successfully".to_string())),
-                    Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+                    Ok(_) => Json(ChangePasswordResponse {
+                        status_code: StatusCode::OK.into(),
+                        message: "Password changed successfully".to_string(),
+                    }),
+                    Err(e) => Json(ChangePasswordResponse {
+                        status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
+                        message: e.to_string(),
+                    }),
                 }
             } else {
-                Err((StatusCode::NOT_FOUND, "User not found.".to_string()))
+                Json(ChangePasswordResponse {
+                    status_code: StatusCode::NOT_FOUND.into(),
+                    message: "User not found.".to_string(),
+                })
             }
         }
-        Err(_e) => Err((StatusCode::UNAUTHORIZED, "Invalid token.".to_string())),
+        Err(_e) => Json(ChangePasswordResponse {
+            status_code: StatusCode::UNAUTHORIZED.into(),
+            message: "Invalid token.".to_string(),
+        }),
     }
 }
