@@ -1,19 +1,19 @@
 [package]
 name = "zenlang"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
-axum = { version = "0.7.1"}
+axum = { version = "0.7.2"}
 shuttle-axum = { version = "0.34.1", features = ["axum-0-7"], default-features = false }
 shuttle-runtime = { version = "0.34.1", default-features = false }
-handlebars = "4.3.7"
+handlebars = "4.5.0"
 lettre = { version = "0.11.2", features = ["tokio1", "tokio1-native-tls"] }
-serde = "1.0.189"
+serde = "1.0.193"
 tower-http = { version = "0.5.0", features = ["full"] }
 http = "1.0.0"
-zen = {git = "https://github.com/zenlang-rs/zen-lang.git", branch = "main", version = "^0.2.4"}
-jsonwebtoken = "9.1.0"
+zen = {git = "https://github.com/zenlang-rs/zen-lang.git", branch = "main", version = "^0.2.5"}
+jsonwebtoken = "9.2.0"
 shuttle-persist = "0.34.1"
 bcrypt = "0.15.0"
 anyhow = "1.0.75"

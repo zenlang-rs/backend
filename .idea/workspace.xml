@@ -8,6 +8,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="722806da-867f-4768-b004-4eb5ed7e80cd" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -78,6 +79,7 @@
       <workItem from="1701485188866" duration="4256000" />
       <workItem from="1701538952512" duration="7000" />
       <workItem from="1701601766730" duration="520000" />
+      <workItem from="1701896493112" duration="498000" />
     </task>
     <servers />
   </component>

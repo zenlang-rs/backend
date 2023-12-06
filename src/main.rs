@@ -11,7 +11,7 @@ mod controllers;
 mod smtp_config;
 
 async fn api_health() -> &'static str {
-    "Zen is High Dear!\nCompiler Version: v0.2.0"
+    "Zen is High Dear!\nCompiler Version: v0.2.5"
         .to_string()
         .leak()
 }

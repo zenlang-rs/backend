@@ -1,7 +1,7 @@
 use crate::controllers::authentication::{MyState, UserData};
+use axum::{extract, Json};
 use axum_extra::headers::authorization::Bearer;
 use axum_extra::headers::Authorization;
-use axum::{extract, Json};
 use axum_extra::TypedHeader;
 use bcrypt::{hash, DEFAULT_COST};
 use http::StatusCode;
