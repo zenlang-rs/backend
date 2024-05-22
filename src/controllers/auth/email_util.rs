@@ -86,7 +86,7 @@ impl Email {
     }
 
     pub async fn send_reset_password_code(&self) -> Result<(), Box<dyn std::error::Error>> {
-        self.send_email("forget_password_code", "Reset Accout Password for Zen-lang")
+        self.send_email("forget_password_code", "Reset Account Password for Zen-lang")
             .await
     }
 }

@@ -10,7 +10,7 @@ use jsonwebtoken::{decode, DecodingKey, EncodingKey, Validation};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use shuttle_persist::PersistInstance;
-use shuttle_secrets::SecretStore;
+use shuttle_runtime::SecretStore;
 use std::sync::Mutex;
 use tower_http::add_extension::AddExtensionLayer;
 

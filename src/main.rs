@@ -4,14 +4,14 @@ use axum::{
 };
 use controllers::authentication::{auth_routes, UserData};
 use shuttle_persist::PersistInstance;
-use shuttle_secrets::SecretStore;
+use shuttle_runtime::SecretStore;
 use tower_http::cors::CorsLayer;
 
 mod controllers;
 mod smtp_config;
 
 async fn api_health() -> &'static str {
-    "Zen is High Dear!\nCompiler Version: v0.2.5"
+    "Zen is High Dear!\nCompiler Version: v0.2.6"
         .to_string()
         .leak()
 }
@@ -19,7 +19,7 @@ async fn api_health() -> &'static str {
 #[shuttle_runtime::main]
 async fn axum(
     #[shuttle_persist::Persist] persist: PersistInstance,
-    #[shuttle_secrets::Secrets] secret_store: SecretStore,
+    #[shuttle_runtime::Secrets] secret_store: SecretStore,
 ) -> shuttle_axum::ShuttleAxum {
     // let origins: [axum::http::HeaderValue; 3] = [
     //     "http://localhost:8000".parse().unwrap(),

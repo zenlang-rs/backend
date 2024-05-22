@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use shuttle_secrets::SecretStore;
+use shuttle_runtime::SecretStore;
 
 #[derive(Debug, Clone)]
 pub struct Config {

@@ -1,14 +1,13 @@
 [package]
 name = "zenlang"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 
 [dependencies]
 axum = { version = "0.7.4"}
-shuttle-axum = { version = "0.39.0" }
-shuttle-runtime = { version = "0.39.0", default-features = false }
-shuttle-persist = "0.39.0"
-shuttle-secrets = "0.39.0"
+shuttle-axum = { version = "0.45.0" }
+shuttle-runtime = { version = "0.45.0", default-features = false }
+shuttle-persist = "0.45.0"
 handlebars = "5.1.0"
 lettre = { version = "0.11.4", features = ["tokio1", "tokio1-native-tls"] }
 serde = "1.0.197"
