@@ -23,4 +23,5 @@ Secrets*.toml
 
 .DS_Store
 Secrets.toml
-!Secrets.sample.toml
+!Secrets.sample.toml/target
+.shuttle*
