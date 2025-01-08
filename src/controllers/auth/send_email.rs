@@ -23,7 +23,7 @@ pub async fn send_email(
     extract::Extension(state): extract::Extension<Arc<MyState>>,
     Path(EmailParam { email }): Path<EmailParam>,
 ) -> Json<SendEmailResponse> {
-    let config = smtp_config::Config::init(email.clone(), state.secrets.clone());
+    let config = smtp_config::Config::init( state.secrets.clone());
 
     // Generate a random verification code
     let verification_code: String = rand::thread_rng()

@@ -46,7 +46,7 @@ impl Email {
     fn render_template(&self, template_name: &str) -> Result<String, handlebars::RenderError> {
         let mut handlebars = Handlebars::new();
         handlebars
-            .register_template_file(template_name, &format!("./templates/{}.hbs", template_name))?;
+            .register_template_file(template_name, format!("./templates/{}.hbs", template_name))?;
         handlebars.register_template_file("styles", "./templates/partials/styles.hbs")?;
         handlebars.register_template_file("base", "./templates/layouts/base.hbs")?;
 

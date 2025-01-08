@@ -9,12 +9,11 @@ pub struct Config {
     pub smtp_user: String,
     pub smtp_pass: String,
     pub smtp_from: String,
-    pub smtp_to: String,
     pub reset_password_url: String,
 }
 
 impl Config {
-    pub fn init(smtp_to: String, secrets: Arc<SecretStore>) -> Config {
+    pub fn init(secrets: Arc<SecretStore>) -> Config {
         let smtp_host = secrets.get("SMTP_HOST").expect("SMTP_HOST must be set");
         let smtp_port = secrets.get("SMTP_PORT").expect("SMTP_PORT must be set");
         let smtp_user = secrets.get("SMTP_USER").expect("SMTP_USER must be set");
@@ -31,7 +30,6 @@ impl Config {
             smtp_user,
             smtp_port: smtp_port.parse::<u16>().unwrap(),
             smtp_from,
-            smtp_to,
             reset_password_url,
         }
     }
