@@ -3937,7 +3937,7 @@ dependencies = [
 [[package]]
 name = "zen"
 version = "0.2.6"
-source = "git+https://github.com/zenlang-rs/zen-lang.git?branch=main#2e63614aa931ccdc333b2e69be7aa3c3a48ed8ac"
+source = "git+https://github.com/zenlang-rs/compiler.git?branch=main#2109a6cce36cfecb59f0a92a3382314680465702"
 dependencies = [
  "colored",
  "lazy_static",
