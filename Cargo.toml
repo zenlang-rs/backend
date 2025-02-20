@@ -1,7 +1,7 @@
 [package]
 name = "zenlang"
 version = "0.2.2"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 axum = { version = "0.7.9"}

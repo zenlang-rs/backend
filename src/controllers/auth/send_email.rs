@@ -74,13 +74,13 @@ pub async fn send_email(
     //  Create an Email instance
     let email = Email::new(user.clone(), verification_url, config);
     // Send a password reset token email
-    if let Err(err) = email.send_reset_password_code().await {
+    match email.send_reset_password_code().await { Err(err) => {
         eprintln!("Failed to send password reset token email: {:?}", err);
         Json(SendEmailResponse {
             status_code: StatusCode::INTERNAL_SERVER_ERROR.into(),
             message: format!("Failed to send email: {:?}", err),
         })
-    } else {
+    } _ => {
         // println!("✅Password reset token email sent successfully!");
         match state.persist.save::<UserData>("data", data) {
             Ok(_) => Json(SendEmailResponse {
@@ -92,5 +92,5 @@ pub async fn send_email(
                 message: e.to_string(),
             }),
         }
-    }
+    }}
 }
